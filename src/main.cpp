@@ -1,6 +1,7 @@
 #include <igl/read_triangle_mesh.h>
+#include <time.h>
 
-#include "simplification.h"
+#include "BaseModel.h"
 
 
 int main(int argc, char* argv[])
@@ -11,15 +12,10 @@ int main(int argc, char* argv[])
 	
 	// TEST
 	const string fileName = "..//models//Buddha.obj";
-	MXd vertices;
-	MXi faces;
-	igl::read_triangle_mesh(fileName, vertices, faces);
+	BaseModel model(fileName);
 
-	Simplification s(vertices, faces);
-	//vector<vector<int>> VF;
-	//vector<vector<int>> VFi;
-	//igl::vertex_triangle_adjacency(vertices, faces, VF, VFi);
+	vector< Eigen::Matrix4d> MF = model.calFundamentalEQ();
+	
 
-	int a = 0;
 	return 0;
 }

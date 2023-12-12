@@ -23,16 +23,18 @@ include_directories(D:/dev/libigl/include)
 # 添加你的源代码文件
 set(SOURCES
      src/main.cpp
+     src/BaseModel.cpp
+     src/Vertex.cpp
      src/simplification.cpp
-     src/Edge.cpp
-     src/EdgeHeap.cpp
+     src/ValidPairHeap.cpp
 )
 
 set(HEADERS
      src/BasicDataType.h
+     src/BaseModel.h
+     src/Vertex.h
      src/simplification.h
-     src/Edge.h
-     src/EdgeHeap.h
+     src/ValidPairHeap.h
 )
 
 add_executable(MeshSimplify ${SOURCES} ${HEADERS})
