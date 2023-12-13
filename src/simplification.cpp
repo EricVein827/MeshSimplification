@@ -1,119 +1,131 @@
-#include "simplification.h"
+#include "Simplification.h"
 
-Simplification::Simplification(const MXd& V, const MXi& F)
+Simplification::Simplification(const string& modelName)
 {
-	_V = V;
-	_F = F;
-	
-	basicProccessing();
+	model = new BaseModel(modelName);
 
-	vector< Eigen::Matrix4d> MF = calFundamentalEQ();
-	for (int i = 0; i < _V.rows(); i++)
-	{
-		Eigen::Matrix4d matrixV = calVertexDelta(i, MF);
-		_MV.emplace_back(matrixV);
-	}
-	MF.clear();
-
+	eHeap = new Heap();
+	cntFace = 0;
 }
 
 Simplification::~Simplification(void)
 {
+	delete model;
+	delete eHeap;
+	cntFace = 0;
 }
 
-void Simplification::extractEdge()
+void Simplification::setRatio(const double& _ratio)
 {
-	set<PII> uset;
+	ratio = _ratio;
+}
 
-	for (int i = 0; i < _F.rows(); i++)
+void Simplification::initialize()
+{
+	
+	vector<Eigen::Matrix4d> MV; //  restore the matrix Q of each vertex
+
+	// add vertices to vertex group
+	cntFace = model->_F.rows();
+
+	// set FaceGroup
+	for (int i = 0; i < cntFace; i++)
 	{
-		V3i f = _F.row(i);
-		int maxF = f.maxCoeff();
-		int minF = f.minCoeff();
-		int middleF = f.sum() - maxF - minF;
-
-		uset.insert(make_pair(minF, middleF));
-		uset.insert(make_pair(middleF, maxF));
-		uset.insert(make_pair(minF, maxF));
+		fGroup.emplace_back(FaceGroup(model->_F.row(i), model->_N.row(i)));
 	}
 
-	for (const PII& it : uset)
-		_E.emplace_back(V2i(it.first, it.second));
-}
+	cntVertex = model->_V.rows(); // the original vertex number 
+	vector<Eigen::Matrix4d> MF = model->_K; // the matrix for faces
+	vector<vector<int >> one_ringF = model->one_ringF;
 
-void Simplification::basicProccessing()
-{
-	// calculate normals of each triangle
-	igl::per_face_normals(_V, _F, _N);
-	//cout << _N.rowwise().norm() << endl;
-
-	extractEdge();
-
-	// igl::adjacency_list(_F, one_ring);   // get one-ring vertex id for each vertex
-	vector<vector<int>>  Fi;
-	igl::vertex_triangle_adjacency(_V, _F, oneRing_facet, Fi);
-}
-
-vector< Eigen::Matrix4d> Simplification::calFundamentalEQ()
-{
-	vector< Eigen::Matrix4d> MF;  // restore matrix for every triangle
-	Eigen::Matrix4d K;   // fundamental error quadrics matrix 
-	for (int i = 0; i < _F.rows(); i++)
+	for (int i = 0; i < cntVertex; i++)
 	{
-		K.setZero();
+		//cout << "i  =    " << i << endl;
+		Vertex v(i, model->_V.row(i), one_ringF);
+		v.setAdjacentV(model->_F);
+		//cout << v.getQ(MF) << endl;
+		MV.emplace_back(v.getQ(MF)); // compute Q of each vertex and restore it to MV
+		vGroup.emplace_back(v);
+	}
 
-		V3d unitNormal = _N.row(i);   // get the unti nornal of each adjacent triangle
-		V3i f = _F.row(i);
-		V3d v = _V.row(f.x());
+	// add edges to  heap
+	vector<V2i> E = model->_E; // the edges of the input model
 
-		Eigen::Vector4d p(unitNormal.x(), unitNormal.y(), unitNormal.z(), -v.dot(unitNormal)); // fundamental error quadric
+	for (const V2i& e : E)
+	{
+		Edge edge(e.x(), e.y());
+		edge.calCostAndV(MV, one_ringF, model->_V);
+		//cout << "cost =  " << edge.cost << "     constraction position = " << edge.V.transpose() << endl;
+		eHeap->addEdge(edge);
+	}
+}
 
-		for (int j = 0; j < 4; j++)
+void Simplification::Simplify()
+{
+	// the number of left faces after simplification
+	int cntDelFace = static_cast<int>(1 - ratio) * cntFace; 
+
+	for (int i = 0; i < cntDelFace; i += 2)  // 
+	{//¿ªÊ¼É¾±ß	
+		Edge e = eHeap->getMinEdge(); 
+		Vertex v1 = vGroup[e.v1];
+		v1.isDeleted = true;
+		Vertex v2 = vGroup[e.v2];
+		v2.isDeleted = true;
+
+		V3d v0 = e.V;
+
+		set<int> connectV;   // the conneected verts with Edge e
+		connectV.clear();
+		eHeap->delEdge(e);   //label e with deleted
+
+		// delete e's edges
+		for (const int& i: v1.adjacent_v) 
 		{
-			for (int k = 0; k < 4; k++)
+			if (i != v2.id) 
 			{
-				K(j, k) += p(k) * p(j);
+				eHeap->delEdge(Edge(i, v1.id));        //label Edge(i, v1.id) with deleted
+				vGroup[i].adjacent_v.erase(v1.id);     // delete v1 from the connected verts' one-ring set
+				connectV.insert(i);                    // add v_i to the constraction point's neighbor
 			}
 		}
 
-		MF.emplace_back(K);
-	}
+		for (const int& i : v2.adjacent_v) {
+			if (i != v2.id) {
+				eHeap->delEdge(Edge(i, v2.id));        //label Edge(i, v2.id) with deleted
+				vGroup[i].adjacent_v.erase(v2.id);     // delete v2 from the connected verts' one-ring set
+				connectV.insert(i);                    // add v_i to the constraction point's neighbor
+			}
+		}
 
-	return MF;
+		// add new vertex to vertex group
+		int newID = cntVertex++;
+		Vertex v(newID, v0);
+		v.adjacent_v = connectV;
+
+		for (const int& i : connectV)
+		{
+			vGroup[i].adjacent_v.insert(newID);
+		}
+
+		vGroup.emplace_back(v);
+
+		//add new vertex to e's neighbors' adjacent v
+		
+
+		//add new Edges to Heap
+		for (const int& i : connectV) 
+		{
+			Edge e(i, newID);
+			e.calCostAndV()
+			eHeap->addEdge(e);
+		}
+
+
+
+	}
 }
 
-Eigen::Matrix4d Simplification::calVertexDelta(const int& vertexID, const vector< Eigen::Matrix4d>& MF)
+void Simplification::output()
 {
-	Eigen::Matrix4d Delta;   // equivalent to Q proposed in the paper QEM Simplification
-	Delta.setZero();
-
-	int connectFacetN = oneRing_facet[vertexID].size(); // the number of adjecent triangles
-
-	for (int i = 0; i < connectFacetN; i++)
-	{
-		int adjacentF = oneRing_facet[vertexID][i];
-
-		Delta = Delta + MF[adjacentF];
-	}
-
-	return Delta;
-}
-
-V3d Simplification::calContractionPosition(const ValidPair& vp, Eigen::Matrix4d matrix)
-{
-	matrix(3, 0) = 0.0;
-	matrix(3, 1) = 0.0;
-	matrix(3, 2) = 0.0;
-	matrix(3, 3) = 1.0;
-
-	if (fabs(matrix.determinant()) <= EPS)
-	{
-		return 0.5 * (_V.row(vp.v1) + _V.row(vp.v2));
-	}
-	
-	Eigen::Vector4d b(0, 0, 0, 1);
-	Eigen::Vector4d X = matrix.inverse() * b;
-	
-	V3d newPoint = V3d(X(0), X(1), X(2)) / X(3);
-	return newPoint;
 }

@@ -20,25 +20,31 @@ include_directories(D:/dev/eigen-3.3.9)
 # 查找Libigl库
 include_directories(D:/dev/libigl/include)
 
+find_package(OpenMP REQUIRED)
 # 添加你的源代码文件
 set(SOURCES
      src/main.cpp
      src/BaseModel.cpp
      src/Vertex.cpp
-     src/simplification.cpp
-     src/ValidPairHeap.cpp
+     src/Edge.cpp
+     src/Heap.cpp
+     src/Simplification.cpp
 )
 
 set(HEADERS
      src/BasicDataType.h
      src/BaseModel.h
      src/Vertex.h
-     src/simplification.h
-     src/ValidPairHeap.h
+     src/Edge.h
+     src/Heap.h
+     src/Simplification.h
 )
 
 add_executable(MeshSimplify ${SOURCES} ${HEADERS})
 
-target_link_libraries(MeshSimplify ${GMP_LIBRARIES})
+target_link_libraries(MeshSimplify 
+  PUBLIC
+    OpenMP::OpenMP_CXX
+)
 
 

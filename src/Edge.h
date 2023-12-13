@@ -6,7 +6,7 @@
 #include "Vertex.h"
 
 
-class Edge : public Vertex
+class Edge
 {
 public:
 	
@@ -14,11 +14,16 @@ public:
 	int v1, v2;   //the id of end points
 	V3d V;       //the shrinked point degenerated from the edge
 	double cost; //the cost when the edge shrinks to a point
+	Eigen::Matrix4d Q;
 
 	Edge(const int& _u = -99, const int& _v = -99);
 	~Edge(void);
-	void update(const vector<Eigen::Matrix4d>& m);
-	void calQ();
+
+	//void calQ(const vector<Eigen::Matrix4d>& m);
+
+	double quarticCost(const V3d& v)const;
+
+	void calCostAndV(const vector<Eigen::Matrix4d>& m, const vector<vector<int >>& one_ringF, const MXd& Verts);
 };
 
 #endif // !EDGE_H

@@ -1,45 +1,49 @@
 #pragma once
+
 #ifndef SIMPLIFICATION_H
 #define SIMPLIFICATION_H
 
-#include <igl/vertex_triangle_adjacency.h>
-#include <igl/adjacency_list.h>
-#include <igl/per_face_normals.h>
+#include <time.h>
+#include <omp.h>
+#include "Heap.h"
 
-#include "BasicDataType.h"
-#include "ValidPairHeap.h"
 
+class FaceGroup
+{
+public:
+	FaceGroup(const V3i& _F, const V3d& _N) :F(_F), N(_N) {};
+	~FaceGroup(void) {};
+	V3i F;
+	V3d N;
+};
 
 class Simplification
 {
 protected:
-	MXd _V;
-	MXi _F;
-	MXd _N; // normals for each triangle
-	vector<V2i> _E; // edges
+	double ratio;
+	int cntFace;//the face number
+	int cntVertex; // the original vertex number 
 
-	// vector<vector<int>> one_ring;  // one_ring vertices  of each vertex 
-	vector<vector<int>> oneRing_facet;  // one-ring triangles for each vertex
+	BaseModel* model;
+	Heap* eHeap;
+	vector<Vertex> vGroup; // vertex gorup
 
-	vector< Eigen::Matrix4d> _MV;  // restore matrix for every vertices
-
+	vector<FaceGroup> fGroup;  // face group
 public:
-	Simplification(const MXd& V, const MXi& F);
-
+	Simplification(const string& modelName);
 	~Simplification(void);
 
-	void extractEdge();
+	// set ratio
+	void setRatio(const double& _ratio);
 
-	// basic proccessing for mesh(V, F)
-	void basicProccessing();
+	//the original Heap
+	void initialize();
 
-	// calcilate fundamental error quadric for every plane where the triangle lies
-	vector< Eigen::Matrix4d> calFundamentalEQ();
+	// simplify the mesh to a new mesh with user-defined face number
+	void Simplify();
 
-	// calculate Delta for each vertex, where Delta(v) = v^T K v, as proposed in Eq.2
-	Eigen::Matrix4d calVertexDelta(const int& vertexID, const vector< Eigen::Matrix4d>& MF);
-	
-	V3d calContractionPosition(const ValidPair& vp, Eigen::Matrix4d matrix);
+
+	void output();//Êä³ö½á¹û
 };
 
 #endif // !SIMPLIFICATION_H

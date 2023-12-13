@@ -4,15 +4,15 @@ void Vertex::calQ(const vector< Eigen::Matrix4d>& m)
 {
 	Q.setZero();
 
-	int connectFacetN = adjacent_v.size(); // the number of adjecent triangles
+	int connectFacetN = adjacent_f.size(); // the number of adjecent triangles
 
-	for (const int& i : adjacent_v)
+	for (const int& i : adjacent_f)
 	{
 		Q = Q + m[i];
 	}
 }
 
-void Vertex::update(const int i, const V3d& v)
+void Vertex::update(const int& i, const V3d& v)
 {
 	id = i;
 	position = v;
@@ -21,27 +21,53 @@ void Vertex::update(const int i, const V3d& v)
 Vertex::Vertex()
 {
 	id = -99;
-	valid = true;
+	isDeleted = false;
 	position = V3d(0, 0, 0);
 
-	for (const int& af : one_ringF[i])
-	{
-		adjacent_v.insert(af);
-	}
+	adjacent_f.clear();
+	adjacent_v.clear();
 }
 
-Vertex::Vertex(const int i, const V3d& v)
+Vertex::Vertex(const int& i, const V3d& v, const vector<vector<int>>& one_ringF)
 {
 	id = i;
-	valid = true;
+	isDeleted = false;
 	position = v;
 
-	for (const int& af : one_ringF[i])
+	for (const int& af : one_ringF[id])
 	{
-		adjacent_v.insert(af);
+		adjacent_f.insert(af);
+	}
+	adjacent_v.clear();
+}
+
+Vertex::Vertex(const int& i, const V3d& v)
+{
+	id = i;
+	isDeleted = false;
+	position = v;
+
+	adjacent_f.clear();
+	adjacent_v.clear();
+}
+
+void Vertex::setAdjacentV(const MXi& F)
+{
+	for (const int& i : adjacent_f)
+	{
+		V3i f = F.row(i);
+		adjacent_v.insert(f.x());
+		adjacent_v.insert(f.y());
+		adjacent_v.insert(f.z());
 	}
 }
 
 Vertex::~Vertex(void)
 {
+}
+
+Eigen::Matrix4d Vertex::getQ(const vector< Eigen::Matrix4d>& m)
+{
+	calQ(m);
+	return Q;
 }
