@@ -2,8 +2,6 @@
 
 void Vertex::calQ(const vector< Eigen::Matrix4d>& m)
 {
-	Q.setZero();
-
 	int connectFacetN = adjacent_f.size(); // the number of adjecent triangles
 
 	for (const int& i : adjacent_f)
@@ -26,6 +24,8 @@ Vertex::Vertex()
 
 	adjacent_f.clear();
 	adjacent_v.clear();
+
+	Q.setZero();
 }
 
 Vertex::Vertex(const int& i, const V3d& v, const vector<vector<int>>& one_ringF)
@@ -39,6 +39,8 @@ Vertex::Vertex(const int& i, const V3d& v, const vector<vector<int>>& one_ringF)
 		adjacent_f.insert(af);
 	}
 	adjacent_v.clear();
+
+	Q.setZero();
 }
 
 Vertex::Vertex(const int& i, const V3d& v)
@@ -49,6 +51,8 @@ Vertex::Vertex(const int& i, const V3d& v)
 
 	adjacent_f.clear();
 	adjacent_v.clear();
+
+	Q.setZero();
 }
 
 void Vertex::setAdjacentV(const MXi& F)
@@ -60,6 +64,8 @@ void Vertex::setAdjacentV(const MXi& F)
 		adjacent_v.insert(f.y());
 		adjacent_v.insert(f.z());
 	}
+
+	adjacent_v.erase(id);
 }
 
 Vertex::~Vertex(void)

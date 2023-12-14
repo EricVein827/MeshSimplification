@@ -12,7 +12,7 @@ endif()
 project (MeshSimplify)
 
 # 添加C++编译选项
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++20)
 
 # 查找Eigen库
 include_directories(D:/dev/eigen-3.3.9)
@@ -26,6 +26,7 @@ set(SOURCES
      src/main.cpp
      src/BaseModel.cpp
      src/Vertex.cpp
+     src/Face.cpp
      src/Edge.cpp
      src/Heap.cpp
      src/Simplification.cpp
@@ -35,6 +36,7 @@ set(HEADERS
      src/BasicDataType.h
      src/BaseModel.h
      src/Vertex.h
+     src/Face.h
      src/Edge.h
      src/Heap.h
      src/Simplification.h

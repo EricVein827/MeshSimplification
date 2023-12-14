@@ -3,11 +3,11 @@
 
 BaseModel::BaseModel(const string& modelName)
 {
-	igl::read_triangle_mesh(modelName, _V, _F);
+	igl::read_triangle_mesh("..//models//" + modelName, _V, _F);
 	
 	basicProccessing();
 
-	_K = calFundamentalEQ();
+	calFundamentalEQ();
 }
 
 BaseModel::BaseModel(const MXd& V, const MXi& F)
@@ -17,7 +17,7 @@ BaseModel::BaseModel(const MXd& V, const MXi& F)
 
 	basicProccessing();
 
-	_K = calFundamentalEQ();
+	calFundamentalEQ();
 }
 
 BaseModel::~BaseModel(void)
@@ -70,9 +70,8 @@ void BaseModel::basicProccessing()
 	igl::vertex_triangle_adjacency(_V, _F, one_ringF, Fi);
 }
 
-vector<Eigen::Matrix4d> BaseModel::calFundamentalEQ()const
+void BaseModel::calFundamentalEQ()
 {
-	vector< Eigen::Matrix4d> MF;  // restore matrix for every triangle
 	Eigen::Matrix4d K;   // fundamental error quadrics matrix 
 	for (int i = 0; i < _F.rows(); i++)
 	{
@@ -92,8 +91,36 @@ vector<Eigen::Matrix4d> BaseModel::calFundamentalEQ()const
 			}
 		}
 
-		MF.emplace_back(K);
+		_K.emplace_back(K);
 	}
+}
 
-	return MF;
+MXd BaseModel::getVert()const
+{
+	return _V;
+}
+
+MXd BaseModel::getNormal()const
+{
+	return _N;
+}
+
+MXi BaseModel::getFace()const
+{
+	return _F;
+}
+
+vector< Eigen::Matrix4d> BaseModel::getVectorMatrix()const
+{
+	return _K;
+}
+
+vector<vector<int>> BaseModel::getOneRingF() const
+{
+	return one_ringF;
+}
+
+vector<V2i> BaseModel::getEdge() const
+{
+	return _E;
 }

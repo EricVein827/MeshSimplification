@@ -5,6 +5,7 @@
 
 #include "BaseModel.h"
 
+
 class Vertex
 {
 public:
@@ -13,7 +14,6 @@ public:
 	V3d position;
 	set<int> adjacent_f;   // adjacent faces
 	set<int> adjacent_v;   // adjacent vertices
-	//set<int> planes;
 	Eigen::Matrix4d Q;
 
 	void calQ(const vector< Eigen::Matrix4d>& m);

@@ -5,17 +5,10 @@
 
 #include <time.h>
 #include <omp.h>
+#include <igl/writeOBJ.h>
 #include "Heap.h"
+#include "Face.h"
 
-
-class FaceGroup
-{
-public:
-	FaceGroup(const V3i& _F, const V3d& _N) :F(_F), N(_N) {};
-	~FaceGroup(void) {};
-	V3i F;
-	V3d N;
-};
 
 class Simplification
 {
@@ -28,9 +21,11 @@ protected:
 	Heap* eHeap;
 	vector<Vertex> vGroup; // vertex gorup
 
-	vector<FaceGroup> fGroup;  // face group
+	vector<Face> fGroup;  // face group
+
+	string modelName;
 public:
-	Simplification(const string& modelName);
+	Simplification(const string& _modelName);
 	~Simplification(void);
 
 	// set ratio
@@ -40,10 +35,10 @@ public:
 	void initialize();
 
 	// simplify the mesh to a new mesh with user-defined face number
-	void Simplify();
+	void simplify();
 
 
-	void output();//Êä³ö½á¹û
+	void output()const;//save the verts and faces to OBJ file.
 };
 
 #endif // !SIMPLIFICATION_H
