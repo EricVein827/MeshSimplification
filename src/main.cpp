@@ -4,7 +4,7 @@
 int main(int argc, char* argv[])
 {
 	// ************************************  basic *******************************************
-	const string fileName = "Buddha.obj";
+	const string fileName = "block.obj";
 	Simplification* meshSimplify = new Simplification(fileName);
 	meshSimplify->setRatio(0.1);
 	clock_t start = clock();
